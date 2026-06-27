@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Kind Studio — จองเวิร์กช็อป</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<!-- LINE LIFF SDK -->
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  :root{
+    --line:#06C755;          /* LINE green */
+    --line-dark:#05a648;
+    --pink:#F7A8C4;          /* Kind Studio accent */
+    --pink-soft:#FFEEF4;
+    --ink:#1f2328;
+    --muted:#8a9099;
+    --line-faint:#e7eaee;
+    --bg:#f4f5f7;
+    --card:#ffffff;
+    --full:#f0a3a3;
+    --radius:16px;
+    --shadow:0 2px 12px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Noto Sans Thai',system-ui,-apple-system,sans-serif;
+    background:var(--bg);color:var(--ink);
+    display:flex;justify-content:center;
+    min-height:100vh;
+  }
+  /* phone frame for desktop demo; full-bleed inside LINE */
+  .phone{
+    width:100%;max-width:430px;background:var(--card);
+    min-height:100vh;position:relative;display:flex;flex-direction:column;
+    box-shadow:0 0 40px rgba(0,0,0,.08);overflow:hidden;
+  }
+  /* ---------- header ---------- */
+  header{
+    background:linear-gradient(135deg,var(--pink) 0%,#f58bb0 100%);
+    color:#fff;padding:18px 20px 22px;position:relative;
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{
+    width:42px;height:42px;border-radius:12px;background:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;color:var(--pink);font-size:20px;flex:none;
+    box-shadow:0 2px 8px rgba(0,0,0,.12);
+  }
+  .brand h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.2px}
+  .brand p{font-size:12px;margin:2px 0 0;opacity:.92}
+  .hello{margin-top:14px;font-size:13px;opacity:.95;display:flex;align-items:center;gap:8px}
+  .hello img{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.7)}
+  /* ---------- demo badge ---------- */
+  .demo-badge{
+    position:absolute;top:10px;right:12px;background:rgba(0,0,0,.22);
+    color:#fff;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600;
+    letter-spacing:.4px;display:none;
+  }
+  body.demo .demo-badge{display:inline-block}
+  /* ---------- steps ---------- */
+  .stepbar{
+    display:flex;gap:6px;padding:14px 20px 6px;font-size:11px;color:var(--muted);
+  }
+  .stepbar .s{display:flex;align-items:center;gap:6px;font-weight:600}
+  .stepbar .dot{width:18px;height:18px;border-radius:50%;background:var(--line-faint);
+    display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
+  .stepbar .s.active .dot{background:var(--line)}
+  .stepbar .s.done .dot{background:var(--line)}
+  .stepbar .bar{flex:1;height:2px;background:var(--line-faint);align-self:center;border-radius:2px}
+  .stepbar .bar.fill{background:var(--line)}
+
+  main{flex:1;overflow-y:auto;padding:8px 0 24px}
+  .screen{display:none;padding:8px 20px 0;animation:fade .25s ease}
+  .screen.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .section-title{font-size:14px;font-weight:700;margin:14px 2px 10px}
+  .hint{font-size:12px;color:var(--muted);margin:0 2px 8px;line-height:1.5}
+
+  /* ---------- date strip ---------- */
+  .dates{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none}
+  .dates::-webkit-scrollbar{display:none}
+  .date{
+    flex:none;width:58px;border:1.5px solid var(--line-faint);border-radius:14px;
+    padding:9px 0;text-align:center;background:#fff;cursor:pointer;transition:.15s;
+  }
+  .date .dow{font-size:11px;color:var(--muted);font-weight:600}
+  .date .day{font-size:19px;font-weight:700;margin:1px 0}
+  .date .mon{font-size:10px;color:var(--muted)}
+  .date.sel{border-color:var(--line);background:var(--line);color:#fff}
+  .date.sel .dow,.date.sel .mon{color:rgba(255,255,255,.9)}
+  .date.today .day::after{content:"";display:block;width:4px;height:4px;border-radius:50%;
+    background:var(--pink);margin:2px auto 0}
+  .date.sel.today .day::after{background:#fff}
+
+  /* ---------- slots ---------- */
+  .slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+  .slot{
+    border:1.5px solid var(--line-faint);border-radius:14px;padding:12px;
+    background:#fff;cursor:pointer;transition:.15s;position:relative;
+  }
+  .slot .time{font-size:15px;font-weight:700}
+  .slot .meta{font-size:11px;color:var(--muted);margin-top:3px}
+  .slot .left{font-size:11px;font-weight:600;color:var(--line-dark);margin-top:6px}
+  .slot.sel{border-color:var(--line);background:#effaf2}
+  .slot.full{background:#faf0f0;border-color:#f3d4d4;cursor:not-allowed;opacity:.85}
+  .slot.full .time{color:#c25b5b}
+  .slot.full .left{color:#c25b5b}
+  .slot .tag{position:absolute;top:10px;right:10px;font-size:10px;font-weight:700;
+    padding:2px 7px;border-radius:20px;background:var(--pink-soft);color:#c2547d}
+  .slot.full .tag{background:#f3d4d4;color:#b13d3d}
+
+  /* ---------- summary / confirm ---------- */
+  .card{background:#fff;border:1px solid var(--line-faint);border-radius:var(--radius);
+    padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;
+    border-bottom:1px dashed var(--line-faint);font-size:14px}
+  .row:last-child{border-bottom:none}
+  .row .k{color:var(--muted);font-size:13px}
+  .row .v{font-weight:600;text-align:right}
+  .pay{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:6px 0 2px}
+  .qr{width:150px;height:150px;border-radius:14px;border:1px solid var(--line-faint);
+    background:
+      linear-gradient(45deg,#000 25%,transparent 25%,transparent 75%,#000 75%),
+      linear-gradient(45deg,#000 25%,#fff 25%,#fff 75%,#000 75%);
+    background-size:14px 14px;background-position:0 0,7px 7px;position:relative;display:flex;
+    align-items:center;justify-content:center}
+  .qr span{background:#fff;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;color:var(--ink)}
+  .promptpay{font-size:12px;color:var(--muted)}
+  .promptpay b{color:var(--ink)}
+
+  /* ---------- success ---------- */
+  .success{text-align:center;padding:36px 8px 8px}
+  .check{width:84px;height:84px;border-radius:50%;background:var(--line);margin:0 auto 18px;
+    display:flex;align-items:center;justify-content:center;animation:pop .4s ease}
+  @keyframes pop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+  .check svg{width:42px;height:42px}
+  .success h2{font-size:20px;margin:0 0 6px}
+  .success p{color:var(--muted);font-size:13px;margin:2px 0;line-height:1.6}
+  .ref{display:inline-block;margin-top:12px;background:var(--pink-soft);color:#c2547d;
+    font-weight:700;font-size:13px;padding:6px 14px;border-radius:20px;letter-spacing:1px}
+
+  /* ---------- footer button ---------- */
+  .footer{padding:12px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line-faint);background:#fff}
+  .btn{width:100%;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;
+    font-family:inherit;cursor:pointer;transition:.15s;background:var(--line);color:#fff}
+  .btn:disabled{background:var(--line-faint);color:#aab0b8;cursor:not-allowed}
+  .btn.ghost{background:#fff;color:var(--line);border:1.5px solid var(--line)}
+  .btn:active:not(:disabled){transform:translateY(1px)}
+  .btn-row{display:flex;gap:10px}
+  .btn-row .btn{flex:1}
+</style>
+</head>
+<body>
+<div class="phone">
+  <span class="demo-badge">โหมดทดลอง · DEMO</span>
+  <header>
+    <div class="brand">
+      <div class="logo">K</div>
+      <div>
+        <h1>Kind Studio</h1>
+        <p>เวิร์กช็อปทำกิ๊บ &amp; เครื่องประดับผม</p>
+      </div>
+    </div>
+    <div class="hello" id="hello">
+      <span>สวัสดีค่ะ ยินดีต้อนรับสู่การจองเวิร์กช็อป 🎀</span>
+    </div>
+  </header>
+
+  <div class="stepbar" id="stepbar">
+    <div class="s active" data-step="1"><span class="dot">1</span><span>เลือกเวลา</span></div>
+    <div class="bar"></div>
+    <div class="s" data-step="2"><span class="dot">2</span><span>ยืนยัน</span></div>
+    <div class="bar"></div>
+    <div class="s" data-step="3"><span class="dot">3</span><span>เสร็จสิ้น</span></div>
+  </div>
+
+  <main>
+    <!-- STEP 1: slot picker -->
+    <section class="screen active" id="screen1">
+      <div class="section-title">เลือกวันที่</div>
+      <div class="hint">เปิดทำการทุกวัน · 1 รอบ = 1 คลาส (90 นาที) ไม่มีการจองทับเวลากันได้</div>
+      <div class="dates" id="dates"></div>
+
+      <div class="section-title">เลือกเวลา</div>
+      <div class="hint" id="slotHint">รอบที่ <b>เต็ม</b> จะถูกล็อกอัตโนมัติ — เลือกไม่ได้</div>
+      <div class="slots" id="slots"></div>
+    </section>
+
+    <!-- STEP 2: confirm + pay -->
+    <section class="screen" id="screen2">
+      <div class="section-title">ตรวจสอบรายละเอียดการจอง</div>
+      <div class="card">
+        <div class="row"><span class="k">ผู้จอง</span><span class="v" id="cName">—</span></div>
+        <div class="row"><span class="k">เวิร์กช็อป</span><span class="v">ทำกิ๊บ &amp; เครื่องประดับผม</span></div>
+        <div class="row"><span class="k">วันที่</span><span class="v" id="cDate">—</span></div>
+        <div class="row"><span class="k">เวลา</span><span class="v" id="cTime">—</span></div>
+        <div class="row"><span class="k">ระยะเวลา</span><span class="v">90 นาที</span></div>
+        <div class="row"><span class="k">ราคา</span><span class="v">฿650 / ท่าน</span></div>
+      </div>
+
+      <div class="section-title">ชำระเงินผ่าน PromptPay</div>
+      <div class="card">
+        <div class="pay">
+          <div class="qr"><span>PromptPay</span></div>
+          <div class="promptpay">สแกนเพื่อชำระ · Kind Studio<br>พร้อมเพย์ <b>09X-XXX-XXXX</b> · ฿650</div>
+        </div>
+      </div>
+      <div class="hint">เมื่อกดยืนยัน รอบเวลานี้จะถูกล็อกให้คุณทันที และส่งอีเมลยืนยันให้อัตโนมัติ</div>
+    </section>
+
+    <!-- STEP 3: success -->
+    <section class="screen" id="screen3">
+      <div class="success">
+        <div class="check">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2>จองสำเร็จแล้ว!</h2>
+        <p>เราล็อกรอบเวลาให้คุณเรียบร้อย<br>ส่งรายละเอียดยืนยันไปทาง LINE และอีเมลแล้วค่ะ</p>
+        <div class="ref" id="refNo">KS-000000</div>
+        <p id="sDateTime" style="margin-top:16px;font-weight:600;color:var(--ink)">—</p>
+        <p>ขอบคุณที่จองกับ Kind Studio 💕</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer" id="footer">
+    <!-- step 1 -->
+    <button class="btn" id="btnNext" disabled>เลือกรอบเวลาก่อน</button>
+    <!-- step 2 -->
+    <div class="btn-row" id="confirmRow" style="display:none">
+      <button class="btn ghost" id="btnBack">ย้อนกลับ</button>
+      <button class="btn" id="btnConfirm">ยืนยัน &amp; ชำระเงิน</button>
+    </div>
+    <!-- step 3 -->
+    <button class="btn" id="btnClose" style="display:none">ปิดหน้าต่าง</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Kind Studio — LIFF booking demo
+// Replace LIFF_ID with the real LIFF ID from LINE Developers console.
+// Outside the LINE app it runs in DEMO mode automatically.
+// ============================================================
+const LIFF_ID = "0000000000-XXXXXXXX"; // TODO: real LIFF ID
+
+const THAI_DOW = ["อา","จ","อ","พ","พฤ","ศ","ส"];
+const THAI_MON = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const THAI_MON_FULL = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+
+// Fixed, NON-OVERLAPPING blocks → overlaps are structurally impossible
+const BLOCKS = [
+  { time:"10:00", end:"11:30" },
+  { time:"11:45", end:"13:15" },
+  { time:"13:30", end:"15:00" },
+  { time:"15:15", end:"16:45" },
+  { time:"17:00", end:"18:30" },
+];
+
+// Mock availability: which (dateKey|time) are already booked.
+// Deterministic so the demo looks realistic & repeatable.
+const booked = new Set();
+function seedAvailability(days){
+  days.forEach((d,i)=>{
+    BLOCKS.forEach((b,j)=>{
+      // pseudo-random but stable pattern of pre-booked slots
+      if(((i*7 + j*13) % 5) === 0 || (i===0 && j<2)) booked.add(d.key + "|" + b.time);
+    });
+  });
+}
+
+const state = { date:null, slot:null, profileName:"คุณลูกค้า", step:1 };
+
+// ---- build next 14 days ----
+function buildDays(){
+  const out=[], now=new Date();
+  for(let i=0;i<14;i++){
+    const dt=new Date(now); dt.setDate(now.getDate()+i);
+    out.push({
+      key: dt.toISOString().slice(0,10),
+      dow: THAI_DOW[dt.getDay()],
+      day: dt.getDate(),
+      mon: THAI_MON[dt.getMonth()],
+      full: `${dt.getDate()} ${THAI_MON_FULL[dt.getMonth()]} ${dt.getFullYear()+543}`,
+      isToday: i===0,
+    });
+  }
+  return out;
+}
+const DAYS = buildDays();
+seedAvailability(DAYS);
+
+// ---- render dates ----
+function renderDates(){
+  const wrap=document.getElementById('dates'); wrap.innerHTML='';
+  DAYS.forEach(d=>{
+    const el=document.createElement('div');
+    el.className='date'+(d.isToday?' today':'')+(state.date===d.key?' sel':'');
+    el.innerHTML=`<div class="dow">${d.dow}</div><div class="day">${d.day}</div><div class="mon">${d.mon}</div>`;
+    el.onclick=()=>{ state.date=d.key; state.slot=null; renderDates(); renderSlots(); updateFooter(); };
+    wrap.appendChild(el);
+  });
+}
+
+// ---- render slots ----
+function renderSlots(){
+  const wrap=document.getElementById('slots'); wrap.innerHTML='';
+  if(!state.date){ wrap.innerHTML='<div class="hint" style="grid-column:1/3">เลือกวันที่ก่อนเพื่อดูรอบเวลาที่ว่าง</div>'; return; }
+  BLOCKS.forEach(b=>{
+    const isFull = booked.has(state.date+"|"+b.time);
+    const el=document.createElement('div');
+    el.className='slot'+(isFull?' full':'')+(state.slot===b.time?' sel':'');
+    el.innerHTML=`
+      <div class="tag">${isFull?'เต็ม':'ว่าง'}</div>
+      <div class="time">${b.time}</div>
+      <div class="meta">ถึง ${b.end} น.</div>
+      <div class="left">${isFull?'ไม่มีที่ว่าง':'จองได้'}</div>`;
+    if(!isFull){ el.onclick=()=>{ state.slot=b.time; renderSlots(); updateFooter(); }; }
+    wrap.appendChild(el);
+  });
+}
+
+// ---- footer / step control ----
+function setStep(n){
+  state.step=n;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen'+n).classList.add('active');
+  // step bar
+  document.querySelectorAll('.stepbar .s').forEach(s=>{
+    const st=+s.dataset.step; s.classList.toggle('active',st===n); s.classList.toggle('done',st<n);
+  });
+  document.querySelectorAll('.stepbar .bar').forEach((b,i)=>b.classList.toggle('fill',i<n-1));
+  // footer buttons
+  document.getElementById('btnNext').style.display   = n===1?'block':'none';
+  document.getElementById('confirmRow').style.display= n===2?'flex':'none';
+  document.getElementById('btnClose').style.display  = n===3?'block':'none';
+  document.querySelector('main').scrollTop=0;
+}
+function updateFooter(){
+  const b=document.getElementById('btnNext');
+  const ready = state.date && state.slot;
+  b.disabled=!ready;
+  b.textContent = ready ? 'ถัดไป — ยืนยันการจอง' : (state.date ? 'เลือกรอบเวลา' : 'เลือกวันและเวลา');
+}
+
+function fmtDate(key){ const d=DAYS.find(x=>x.key===key); return d?d.full:key; }
+function slotEnd(t){ const b=BLOCKS.find(x=>x.time===t); return b?b.end:''; }
+
+// ---- confirm screen ----
+function goConfirm(){
+  document.getElementById('cName').textContent = state.profileName;
+  document.getElementById('cDate').textContent = fmtDate(state.date);
+  document.getElementById('cTime').textContent = `${state.slot} – ${slotEnd(state.slot)} น.`;
+  setStep(2);
+}
+
+// ---- commit booking ----
+function commit(){
+  // Lock the slot — double booking now impossible for everyone else
+  booked.add(state.date+"|"+state.slot);
+  const ref = 'KS-' + Math.floor(100000+Math.random()*899999);
+  document.getElementById('refNo').textContent = ref;
+  document.getElementById('sDateTime').textContent =
+    `${fmtDate(state.date)} · ${state.slot} – ${slotEnd(state.slot)} น.`;
+  setStep(3);
+  // In production: POST to backend (Google Workspace) + trigger Gmail confirmation here.
+}
+
+// ---- wire buttons ----
+document.getElementById('btnNext').onclick = goConfirm;
+document.getElementById('btnBack').onclick = ()=>setStep(1);
+document.getElementById('btnConfirm').onclick = commit;
+document.getElementById('btnClose').onclick = ()=>{
+  if(window.liff && liff.isInClient && liff.isInClient()){ liff.closeWindow(); }
+  else { location.reload(); }
+};
+
+// ---- init UI ----
+renderDates(); renderSlots(); updateFooter(); setStep(1);
+
+// ============================================================
+// LIFF init — pulls the customer's LINE display name & picture.
+// Falls back to DEMO mode in a normal browser.
+// ============================================================
+async function initLiff(){
+  try{
+    if(!window.liff) throw new Error('LIFF SDK not loaded');
+    await liff.init({ liffId: LIFF_ID });
+    if(!liff.isLoggedIn()){ liff.login(); return; }
+    const p = await liff.getProfile();
+    state.profileName = p.displayName || state.profileName;
+    const hello=document.getElementById('hello');
+    hello.innerHTML = (p.pictureUrl?`<img src="${p.pictureUrl}" alt="">`:'')+
+      `<span>สวัสดีค่ะ คุณ <b>${p.displayName}</b> 🎀</span>`;
+  }catch(e){
+    // DEMO MODE — no real LINE context
+    document.body.classList.add('demo');
+    state.profileName = 'คุณพิมพ์ (ตัวอย่าง)';
+    document.getElementById('hello').innerHTML =
+      '<span>สวัสดีค่ะ — กำลังแสดงในโหมดทดลอง 🎀</span>';
+    console.info('[Kind Studio] Running in DEMO mode:', e.message);
+  }
+}
+initLiff();
+</script>
+</body>
+</html>
